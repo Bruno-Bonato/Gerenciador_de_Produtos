@@ -23,11 +23,133 @@ struct Produto{ //Estrutura do produto
     };
 };
 
-void cadastrarProduto(FILE *arq);
+void cadastrarProduto(FILE *arq){
+    struct Produto produto;
+    int tipoProduto;
 
-void listarProdutos(FILE *arq);
+    fseek(arq, 0, SEEK_END); // Vai para o fim do arquivo
+    long pos = ftell(arq);
+    produto.id = (pos / sizeof(produto)) + 1; // ID automático com base no tamanho do arquivo
+    produto.status = 1; // Produto ativo
 
-void buscarProduto(FILE *arq);
+    printf("\n=-=-= Cadastro de Novo Produto =-=-=\n");
+    printf("Escolha o tipo de produto:\n");
+    printf("0 - Alimento\n");
+    printf("1 - Bebida\n");
+    printf("2 - Higiene\n");
+    printf("3 - Limpeza\n");
+    printf("4 - Vestuário\n");
+    printf("Tipo: ");
+    scanf("%d", &tipoProduto);
+    while (getchar() != '\n'); // Limpa buffer
+
+    produto.tipo = tipoProduto;
+
+    printf("Digite o nome do produto: ");
+    fgets(produto.nome, 50, stdin);
+    produto.nome[strcspn(produto.nome, "\n")] = '\0';
+
+    printf("Digite o preço: ");
+    scanf("%f", &produto.preco);
+
+    printf("Digite a quantidade: ");
+    scanf("%d", &produto.quantidade);
+    
+    while (getchar() != '\n');
+
+    switch (produto.tipo) {
+        case ALIMENTO:
+        case BEBIDA:
+            printf("Digite a validade (dd/mm/aaaa): ");
+            fgets(produto.validade, 11, stdin);
+            produto.validade[strcspn(produto.validade, "\n")] = '\0';
+            break;
+        case VESTUARIO:
+            printf("Digite o tamanho (ex: P, M, G): ");
+            fgets(produto.tamanho, 4, stdin);
+            produto.tamanho[strcspn(produto.tamanho, "\n")] = '\0';
+            break;
+        default:
+            memset(produto.validade, 0, sizeof(produto.validade)); //Preenche todo o campo do produto.validade como 0000...
+            break;
+    }
+
+    printf("Digite até 5 marcas (pressione Enter para encerrar antes):\n");
+    for (int i = 0; i < 5; i++) {
+        printf("Marca %d: ", i + 1);
+        fgets(produto.marcas[i], 20, stdin);
+        produto.marcas[i][strcspn(produto.marcas[i], "\n")] = '\0';
+        if (produto.marcas[i][0] == '\0') break;
+    }
+
+    fwrite(&produto, sizeof(produto), 1, arq);
+    printf("Produto cadastrado com sucesso! ID: %d\n", produto.id);
+}
+
+void listarProdutos(FILE *arq) {
+    struct Produto produto;
+    rewind(arq); // Volta para o início do arquivo
+
+    printf("\n=-=-= Lista de Produtos =-=-=\n");
+    int contador = 0;
+    while (fread(&produto, sizeof(produto), 1, arq) == 1) {
+        if (produto.status == 1) { // Apenas ativos
+            printf("\nID: %d\n", produto.id);
+            printf("Nome: %s\n", produto.nome);
+            printf("Preço: %.2f\n", produto.preco);
+            printf("Quantidade: %d\n", produto.quantidade);
+
+            switch (produto.tipo) {
+                case ALIMENTO: printf("Tipo: Alimento\n"); break;
+                case BEBIDA: printf("Tipo: Bebida\n"); break;
+                case HIGIENE: printf("Tipo: Higiene\n"); break;
+                case LIMPEZA: printf("Tipo: Limpeza\n"); break;
+                case VESTUARIO: printf("Tipo: Vestuário\n"); break;
+            }
+
+            if (produto.tipo == ALIMENTO || produto.tipo == BEBIDA)
+                printf("Validade: %s\n", produto.validade);
+            else if (produto.tipo == VESTUARIO)
+                printf("Tamanho: %s\n", produto.tamanho);
+
+            printf("Marcas: ");
+            for (int i = 0; i < 5 && produto.marcas[i][0] != '\0'; i++) {
+                printf("%s", produto.marcas[i]);
+                if (i < 4 && produto.marcas[i+1][0] != '\0') printf(", ");
+            }
+            printf("\n=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n");
+            contador++;
+        }
+    }
+
+    if (contador == 0)
+        printf("Nenhum produto ativo encontrado.\n");
+}
+
+void buscarProduto(FILE *arq) {
+    struct Produto produto;
+    char nomeBusca[50];
+    int encontrado = 0;
+
+    printf("\nDigite o nome do produto: ");
+    while (getchar() != '\n'); // limpar buffer antes da leitura
+    fgets(nomeBusca, 50, stdin);
+    nomeBusca[strcspn(nomeBusca, "\n")] = '\0';
+
+    rewind(arq);
+    printf("\n--- Resultados da Busca ---\n");
+
+    while (fread(&produto, sizeof(produto), 1, arq) == 1) {
+        if (produto.status == 1 && strstr(produto.nome, nomeBusca)) {
+            printf("\nID: %d | Nome: %s | Preço: %.2f | Quantidade: %d\n", 
+                   produto.id, produto.nome, produto.preco, produto.quantidade);
+            encontrado = 1;
+        }
+    }
+
+    if (!encontrado)
+        printf("Nenhum produto encontrado com o termo '%s'.\n", nomeBusca);
+}
 
 void editarProduto(FILE *arq){
     struct Produto produto;
