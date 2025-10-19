@@ -18,10 +18,15 @@ struct Produto{ //Estrutura do produto
     char marcas[5][20];
     int status; // 1 - ativo, 0 - removido
     union{
-        char validade[11]; // alimentos e bebidas
+        char validade[11]; // alimentos, bebidas e limpeza
         char tamanho[4];  // vestuário
     };
 };
+
+void limpar_buffer() { // Função para limpar o buffer de entrada
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) { }
+}
 
 void cadastrarProduto(FILE *arq){
     struct Produto produto;
@@ -41,7 +46,7 @@ void cadastrarProduto(FILE *arq){
     printf("4 - Vestuário\n");
     printf("Tipo: ");
     scanf("%d", &tipoProduto);
-    while (getchar() != '\n'); // Limpa buffer
+    limpar_buffer();
 
     produto.tipo = tipoProduto;
 
@@ -51,11 +56,11 @@ void cadastrarProduto(FILE *arq){
 
     printf("Digite o preço: ");
     scanf("%f", &produto.preco);
+    limpar_buffer();
 
     printf("Digite a quantidade: ");
     scanf("%d", &produto.quantidade);
-    
-    while (getchar() != '\n');
+    limpar_buffer();
 
     switch (produto.tipo) {
         case ALIMENTO:
@@ -156,14 +161,15 @@ void editarProduto(FILE *arq){
     int id;
     printf("\nDigite o ID do produto: "); // Pede o ID do produto a ser editado 
     scanf("%d", &id);
-    while(getchar() != '\n');
+    limpar_buffer();
 
     long pos = (id - 1) * sizeof(produto); // Calcula a posição do produto no arquivo
     fseek(arq, pos, SEEK_SET);
-    if (fread(&produto, sizeof(produto), 1, arq) != 1 || produto.status) {
+    if (fread(&produto, sizeof(produto), 1, arq) != 1 || produto.status == 0) { // Verifica se o produto existe e está ativo
         printf("Produto não encontrado!\n");
         return;
-    }
+}
+
     printf("Produto atual:\n"); // Exibe as informações atuais do produto
     printf("ID: %d | Nome: %s | Preço: %.2f\n", produto.id, produto.nome, produto.preco);
 
@@ -181,6 +187,7 @@ void editarProduto(FILE *arq){
     printf("Digite o novo preço (ou -1 para manter o atual): ");
     float novoPreco;
     scanf("%f", &novoPreco);
+    limpar_buffer();
 
     if (novoPreco >= 0) {
         produto.preco = novoPreco;
@@ -189,7 +196,7 @@ void editarProduto(FILE *arq){
     printf("Digite o nova quantidade (ou -1 para manter o atual): ");
     int novaQuantidade;
     scanf("%d", &novaQuantidade);
-    while(getchar() != '\n');
+    limpar_buffer();
 
     if (novaQuantidade >= 0) {
         produto.quantidade = novaQuantidade;
@@ -198,6 +205,7 @@ void editarProduto(FILE *arq){
     switch (produto.tipo){
         case ALIMENTO:
         case BEBIDA:
+        case LIMPEZA:
             printf("Digite a nova validade (deixe em branco para manter a atual): ");
             fgets(produto.validade, 11, stdin);
             break;
@@ -212,7 +220,7 @@ void editarProduto(FILE *arq){
         char novaMarca[20];
         fgets(novaMarca, 20, stdin);
         if (novaMarca[0] != '\n') {
-            strcpy(produto.nome, novaMarca);
+            strcpy(produto.marcas[i], novaMarca);
         }
     }
 
@@ -227,15 +235,17 @@ void removerProduto(FILE *arq){
     int id;
     printf("\nDigite o ID do produto: "); // Pede o ID do produto a ser removido
     scanf("%d", &id);
+    limpar_buffer();
+
     long pos = (id - 1) * sizeof(produto); // Calcula a posição do produto no arquivo
-    fseek(arq, pos, SEEK_SET);
-    if (fread(&produto, sizeof(produto), 1, arq) != 1 || produto.status) {
+    fseek(arq, pos, SEEK_SET); 
+    if (fread(&produto, sizeof(produto), 1, arq) != 1 || produto.status == 0) { // Verifica se o produto existe e está ativo
         printf("Produto não encontrado!\n");
         return;
-    } else{
-        produto.status = 1; // Marca o produto como removido
+    } else {
+        produto.status = 0; // Marca o produto como removido
         fseek(arq, pos, SEEK_SET);
-        fwrite(&produto, sizeof(produto), 1, arq); // Atualiza o produto no arquivo
+        fwrite(&produto, sizeof(produto), 1, arq);
         printf("Produto removido com sucesso!\n");
     }
 }
