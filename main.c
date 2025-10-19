@@ -78,7 +78,7 @@ void cadastrarProduto(FILE *arq){
             memset(produto.validade, 0, sizeof(produto.validade)); //Preenche todo o campo do produto.validade como 0000...
             break;
     }
-
+    limpar_buffer();
     printf("Digite até 5 marcas (pressione Enter para encerrar antes):\n");
     for (int i = 0; i < 5; i++) {
         printf("Marca %d: ", i + 1);
@@ -98,33 +98,30 @@ void listarProdutos(FILE *arq) {
     printf("\n=-=-= Lista de Produtos =-=-=\n");
     int contador = 0;
     while (fread(&produto, sizeof(produto), 1, arq) == 1) {
-        if (produto.status == 1) { // Apenas ativos
-            printf("\nID: %d\n", produto.id);
-            printf("Nome: %s\n", produto.nome);
-            printf("Preço: %.2f\n", produto.preco);
-            printf("Quantidade: %d\n", produto.quantidade);
+        printf("\nID: %d\n", produto.id);
+        printf("Nome: %s\n", produto.nome);
+         printf("Preço: %.2f\n", produto.preco);
+        printf("Quantidade: %d\n", produto.quantidade);
 
-            switch (produto.tipo) {
-                case ALIMENTO: printf("Tipo: Alimento\n"); break;
-                case BEBIDA: printf("Tipo: Bebida\n"); break;
-                case HIGIENE: printf("Tipo: Higiene\n"); break;
-                case LIMPEZA: printf("Tipo: Limpeza\n"); break;
-                case VESTUARIO: printf("Tipo: Vestuário\n"); break;
-            }
-
-            if (produto.tipo == ALIMENTO || produto.tipo == BEBIDA)
-                printf("Validade: %s\n", produto.validade);
-            else if (produto.tipo == VESTUARIO)
-                printf("Tamanho: %s\n", produto.tamanho);
-
-            printf("Marcas: ");
-            for (int i = 0; i < 5 && produto.marcas[i][0] != '\0'; i++) {
-                printf("%s", produto.marcas[i]);
-                if (i < 4 && produto.marcas[i+1][0] != '\0') printf(", ");
-            }
-            printf("\n=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n");
-            contador++;
+        switch (produto.tipo) {
+            case ALIMENTO: printf("Tipo: Alimento\n"); break;
+            case BEBIDA: printf("Tipo: Bebida\n"); break;
+            case HIGIENE: printf("Tipo: Higiene\n"); break;
+            case LIMPEZA: printf("Tipo: Limpeza\n"); break;
+            case VESTUARIO: printf("Tipo: Vestuário\n"); break;
         }
+
+        if (produto.tipo == ALIMENTO || produto.tipo == BEBIDA) printf("Validade: %s\n", produto.validade);
+        else if (produto.tipo == VESTUARIO) printf("Tamanho: %s\n", produto.tamanho);
+        if (produto.status == 1)  printf("Status: Ativo\n");
+        else if(produto.status == 0)  printf("Status: Inativo\n");
+        printf("Marcas: ");
+        for (int i = 0; i < 5 && produto.marcas[i][0] != '\0'; i++) {
+            printf("%s", produto.marcas[i]);
+            if (i < 4 && produto.marcas[i+1][0] != '\0') printf(", ");
+        }
+        printf("\n=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n");
+        contador++;
     }
 
     if (contador == 0)
@@ -145,9 +142,30 @@ void buscarProduto(FILE *arq) {
     printf("\n--- Resultados da Busca ---\n");
 
     while (fread(&produto, sizeof(produto), 1, arq) == 1) {
-        if (produto.status == 1 && strstr(produto.nome, nomeBusca)) {
-            printf("\nID: %d | Nome: %s | Preço: %.2f | Quantidade: %d\n", 
+        if (strstr(produto.nome, nomeBusca)) {
+            switch (produto.tipo){
+                case ALIMENTO:
+                case BEBIDA:
+                case LIMPEZA:
+                    printf("\nID: %d | Nome: %s | Preço: %.2f | Quantidade: %d | Validade:%s |Status: ", 
+                   produto.id, produto.nome, produto.preco, produto.quantidade, produto.validade);
+                   break;
+                case VESTUARIO:
+                    printf("\nID: %d | Nome: %s | Preço: %.2f | Quantidade: %d | Tamanho: %s |Status: ", 
+                   produto.id, produto.nome, produto.preco, produto.quantidade, produto.tamanho);
+                   break;
+                case HIGIENE:
+                    printf("\nID: %d | Nome: %s | Preço: %.2f | Quantidade: %d |Status: ", 
                    produto.id, produto.nome, produto.preco, produto.quantidade);
+                   break;
+            }
+            if (produto.status == 1) printf("Ativo\n");
+            else if (produto.status == 0) printf("Inativo\n");
+            printf("Marcas: ");
+            for (int i = 0; i < 5 && produto.marcas[i][0] != '\0'; i++) {
+                printf("%s", produto.marcas[i]);
+                if (i < 4 && produto.marcas[i+1][0] != '\0') printf(", ");
+            }
             encontrado = 1;
         }
     }
