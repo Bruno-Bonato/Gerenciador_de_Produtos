@@ -231,6 +231,8 @@ void editarProduto(FILE *arq){
             printf("Digite o novo tamanho (deixe em branco para manter o atual): ");
             fgets(produto.tamanho, 4, stdin);
             break;
+        default:
+            break;
     }
 
     for (int i = 0; i< 5; i++){
