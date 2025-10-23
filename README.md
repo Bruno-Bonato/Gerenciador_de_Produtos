@@ -12,6 +12,8 @@ Este projeto trata-se de um sistema de **gerenciamento de produtos** desenvolvid
 
 No sistema são armazenadas informações de cada produto, tais como:
 
+- Tipo de produto (ex: alimento, bebida, higiene, limpeza e vestuário) 
+
 - Identificador único do produto (ID)  
 
 - Nome do produto  
@@ -23,6 +25,10 @@ No sistema são armazenadas informações de cada produto, tais como:
 - Marcas
 
 - Status do produto (ex: 1 - ativo e 0 - removido)
+
+Além disso, há **informações específicas** dependendo da tipagem do produto:
+- Para **alimentos**, **bebidas** e **limpeza**: data de validade.  
+- Para **vestuário**: tamanho.  
 
 
 
