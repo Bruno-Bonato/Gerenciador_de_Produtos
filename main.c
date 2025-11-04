@@ -1,27 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-
-enum Tipo_produto{ //Tag para controle do tipo de produto
-    ALIMENTO,
-    BEBIDA,
-    HIGIENE,
-    LIMPEZA,
-    VESTUARIO
-};
-
-struct Produto{ //Estrutura do produto
-    enum Tipo_produto tipo;
-    int id;
-    char nome[50];
-    float preco;
-    int quantidade;
-    char marcas[5][20];
-    int status; // 1 - ativo, 0 - removido
-    union{
-        char validade[11]; // alimentos, bebidas e limpeza
-        char tamanho[4];  // vestuário
-    };
-};
+#include "tipos.h" // Inclui o arquivo de tipos
 
 void limpar_buffer() { // Função para limpar o buffer de entrada
     int c;
@@ -62,23 +41,56 @@ void cadastrarProduto(FILE *arq){
     scanf("%d", &produto.quantidade);
     limpar_buffer();
 
-    switch (produto.tipo) {
+    switch (produto.tipo) { // Solicita informações específicas com base no tipo de produto
         case ALIMENTO:
-        case BEBIDA:
             printf("Digite a validade (dd/mm/aaaa): ");
-            fgets(produto.validade, 11, stdin);
-            produto.validade[strcspn(produto.validade, "\n")] = '\0';
+            fgets(produto.alimento.validade, 11, stdin);
+            produto.alimento.validade[strcspn(produto.alimento.validade, "\n")] = '\0';
+            printf("Digite o peso (kg): ");
+            scanf("%f", &produto.alimento.peso);
+            limpar_buffer();
             break;
+
+        case BEBIDA:
+            printf("Quantos ml tem a bebida: ");
+            scanf("%d", &produto.bebida.ml);
+            printf("Digite o teor alcoólico (%%): ");
+            scanf("%f", &produto.bebida.teor_alcoolico);
+            limpar_buffer();
+            break;
+
         case VESTUARIO:
             printf("Digite o tamanho (ex: P, M, G): ");
-            fgets(produto.tamanho, 4, stdin);
-            produto.tamanho[strcspn(produto.tamanho, "\n")] = '\0';
+            fgets(produto.vestuario.tamanho, 4, stdin);
+            produto.vestuario.tamanho[strcspn(produto.vestuario.tamanho, "\n")] = '\0';
+            printf("Digite o material: ");
+            fgets(produto.vestuario.material, 20, stdin);
+            produto.vestuario.material[strcspn(produto.vestuario.material, "\n")] = '\0';
             break;
+
+        case LIMPEZA:
+            printf("Digite os componentes químicos: ");
+            fgets(produto.limpeza.componentes_quimicos, 50, stdin);
+            produto.limpeza.componentes_quimicos[strcspn(produto.limpeza.componentes_quimicos, "\n")] = '\0';
+            printf("Digite a periculosidade (1 a 5): ");
+            scanf("%d", &produto.limpeza.periculosidade);
+            limpar_buffer();
+            break;
+        
+        case HIGIENE:
+            printf("Digite o pH do produto: ");
+            scanf("%f", &produto.higiene.pH);
+            limpar_buffer();
+            printf("Digite o tipo de pele (ex: oleosa, seca, mista): ");
+            fgets(produto.higiene.tipo_pele, 20, stdin);
+            produto.higiene.tipo_pele[strcspn(produto.higiene.tipo_pele, "\n")] = '\0';
+            break;
+
         default:
-            memset(produto.validade, 0, sizeof(produto.validade)); //Preenche todo o campo do produto.validade como 0000...
+            printf("Tipo de produto inválido!\n");
             break;
     }
-    limpar_buffer();
+
     printf("Digite até 5 marcas (pressione Enter para encerrar antes):\n");
     for (int i = 0; i < 5; i++) {
         printf("Marca %d: ", i + 1);
@@ -88,6 +100,7 @@ void cadastrarProduto(FILE *arq){
     }
 
     fwrite(&produto, sizeof(produto), 1, arq);
+    fflush(arq); // Garante que os dados sejam escritos no arquivo
     printf("Produto cadastrado com sucesso! ID: %d\n", produto.id);
 }
 
@@ -100,19 +113,34 @@ void listarProdutos(FILE *arq) {
     while (fread(&produto, sizeof(produto), 1, arq) == 1) {
         printf("\nID: %d\n", produto.id);
         printf("Nome: %s\n", produto.nome);
-         printf("Preço: %.2f\n", produto.preco);
+        printf("Preço: %.2f\n", produto.preco);
         printf("Quantidade: %d\n", produto.quantidade);
 
         switch (produto.tipo) {
-            case ALIMENTO: printf("Tipo: Alimento\n"); break;
-            case BEBIDA: printf("Tipo: Bebida\n"); break;
-            case HIGIENE: printf("Tipo: Higiene\n"); break;
-            case LIMPEZA: printf("Tipo: Limpeza\n"); break;
-            case VESTUARIO: printf("Tipo: Vestuário\n"); break;
+                case ALIMENTO: printf("Tipo: Alimento\n"); break;
+                case BEBIDA: printf("Tipo: Bebida\n"); break;
+                case HIGIENE: printf("Tipo: Higiene\n"); break;
+                case LIMPEZA: printf("Tipo: Limpeza\n"); break;
+                case VESTUARIO: printf("Tipo: Vestuário\n"); break;
         }
 
-        if (produto.tipo == ALIMENTO || produto.tipo == BEBIDA) printf("Validade: %s\n", produto.validade);
-        else if (produto.tipo == VESTUARIO) printf("Tamanho: %s\n", produto.tamanho);
+        if (produto.tipo == ALIMENTO) { // Exibe informações específicas
+            printf("Validade: %s\n", produto.alimento.validade);
+            printf("Peso: %.2f kg\n", produto.alimento.peso);
+        } else if (produto.tipo == BEBIDA) {
+            printf("Teor Alcoólico: %.2f %%\n", produto.bebida.teor_alcoolico);
+            printf("Volume: %d ml\n", produto.bebida.ml);
+        } else if (produto.tipo == HIGIENE) {
+            printf("pH: %.2f\n", produto.higiene.pH);
+            printf("Tipo de Pele: %s\n", produto.higiene.tipo_pele);
+        } else if (produto.tipo == LIMPEZA) {
+            printf("Componentes Químicos: %s\n", produto.limpeza.componentes_quimicos);
+            printf("Periculosidade: %d\n", produto.limpeza.periculosidade);
+        } else if (produto.tipo == VESTUARIO) {
+            printf("Tamanho: %s\n", produto.vestuario.tamanho);
+            printf("Material: %s\n", produto.vestuario.material);
+        }
+
         if (produto.status == 1)  printf("Status: Ativo\n");
         else if(produto.status == 0)  printf("Status: Inativo\n");
         printf("Marcas: ");
@@ -142,30 +170,9 @@ void buscarProduto(FILE *arq) {
     printf("\n--- Resultados da Busca ---\n");
 
     while (fread(&produto, sizeof(produto), 1, arq) == 1) {
-        if (strstr(produto.nome, nomeBusca)) {
-            switch (produto.tipo){
-                case ALIMENTO:
-                case BEBIDA:
-                case LIMPEZA:
-                    printf("\nID: %d | Nome: %s | Preço: %.2f | Quantidade: %d | Validade:%s |Status: ", 
-                   produto.id, produto.nome, produto.preco, produto.quantidade, produto.validade);
-                   break;
-                case VESTUARIO:
-                    printf("\nID: %d | Nome: %s | Preço: %.2f | Quantidade: %d | Tamanho: %s |Status: ", 
-                   produto.id, produto.nome, produto.preco, produto.quantidade, produto.tamanho);
-                   break;
-                case HIGIENE:
-                    printf("\nID: %d | Nome: %s | Preço: %.2f | Quantidade: %d |Status: ", 
+        if (produto.status == 1 && strstr(produto.nome, nomeBusca)) {
+            printf("\nID: %d | Nome: %s | Preço: %.2f | Quantidade: %d\n", 
                    produto.id, produto.nome, produto.preco, produto.quantidade);
-                   break;
-            }
-            if (produto.status == 1) printf("Ativo\n");
-            else if (produto.status == 0) printf("Inativo\n");
-            printf("Marcas: ");
-            for (int i = 0; i < 5 && produto.marcas[i][0] != '\0'; i++) {
-                printf("%s", produto.marcas[i]);
-                if (i < 4 && produto.marcas[i+1][0] != '\0') printf(", ");
-            }
             encontrado = 1;
         }
     }
@@ -200,7 +207,12 @@ void editarProduto(FILE *arq){
     // Solicita as novas informações do produto
 
     printf("\nDigite o novo nome (deixe em branco para manter o atual): ");
-    fgets(produto.nome, 50, stdin);
+    char novoNome[50];
+    fgets(novoNome, 50, stdin);
+    novoNome[strcspn(novoNome, "\n")] = '\0';
+    if (strlen(novoNome) > 0) {
+        strcpy(produto.nome, novoNome);
+    }
 
     printf("Digite o novo preço (ou -1 para manter o atual): ");
     float novoPreco;
@@ -222,16 +234,41 @@ void editarProduto(FILE *arq){
 
     switch (produto.tipo){
         case ALIMENTO:
+            printf("Digite a nova validade (dd/mm/aaaa) (deixe em branco para manter a atual): ");
+            fgets(produto.alimento.validade, 11, stdin);
+            produto.alimento.validade[strcspn(produto.alimento.validade, "\n")] = '\0';
+            break;
+
         case BEBIDA:
-        case LIMPEZA:
-            printf("Digite a nova validade (deixe em branco para manter a atual): ");
-            fgets(produto.validade, 11, stdin);
+            printf("Digite o novo teor alcoólico (%%) (ou -1 para manter o atual): ");
+            float novoTeor;
+            scanf("%f", &novoTeor);
+            limpar_buffer();
+            if (novoTeor >= 0) {
+                produto.bebida.teor_alcoolico = novoTeor;
+            }
             break;
+
         case VESTUARIO:
-            printf("Digite o novo tamanho (deixe em branco para manter o atual): ");
-            fgets(produto.tamanho, 4, stdin);
+            printf("Digite o novo tamanho (ex: P, M, G) (deixe em branco para manter o atual): ");
+            fgets(produto.vestuario.tamanho, 4, stdin);
+            produto.vestuario.tamanho[strcspn(produto.vestuario.tamanho, "\n")] = '\0';
             break;
-        default:
+
+        case LIMPEZA:
+            printf("Digite os novos componentes químicos (deixe em branco para manter o atual): ");
+            fgets(produto.limpeza.componentes_quimicos, 50, stdin);
+            produto.limpeza.componentes_quimicos[strcspn(produto.limpeza.componentes_quimicos, "\n")] = '\0';
+            break;
+
+        case HIGIENE:
+            printf("Digite o novo pH (ou -1 para manter o atual): ");
+            float novoPH;
+            scanf("%f", &novoPH);
+            limpar_buffer();
+            if (novoPH >= 0) {
+                produto.higiene.pH = novoPH;
+            }
             break;
     }
 
@@ -239,15 +276,17 @@ void editarProduto(FILE *arq){
         printf("Digite a nova marca %d (deixe em branco para manter a atual): ", i + 1);
         char novaMarca[20];
         fgets(novaMarca, 20, stdin);
-        if (novaMarca[0] != '\n') {
-            strcpy(produto.marcas[i], novaMarca);
+        size_t len = strlen(novaMarca);
+        if (len > 0 && novaMarca[len - 1] == '\n') { // // Verifica se o último caractere é '\n' e o troca por '\0'
+            novaMarca[len - 1] = '\0';
+        } else { // Limpa o buffer se a entrada exceder o tamanho do array
+            limpar_buffer();
         }
     }
 
     // Atualiza o produto no arquivo
     fseek(arq, pos, SEEK_SET);
     fwrite(&produto, sizeof(produto), 1, arq);
-
     printf("Produto atualizado com sucesso!\n");
 }
 void removerProduto(FILE *arq){
@@ -270,7 +309,7 @@ void removerProduto(FILE *arq){
     }
 }
 
-const char *ARQUIVO = "produtos.bin"; // Nome do arquivo binário
+const char *ARQUIVO = "./produtos.bin"; // Nome do arquivo binário
 
 int main() {
     FILE *arq;
